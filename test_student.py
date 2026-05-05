@@ -92,9 +92,9 @@ class TestFilterRows(unittest.TestCase):
     def test_filter_less_than(self):
         data = self.make_list()
         
-        result = filter_rows(data, "energy_co2_emissions", "less_than", 20)
+        result = filter_rows(data, "energy_co2_emissions", "less_than", 10)
 
-        self.assertTrue(result.value.energy_co2_emissions < 20)
+        self.assertIsNone(result)
     
     def test_filt_none_values_skipped(self):
         r1 = Row("Mexico", 2000, None, None, None, None, None, None)

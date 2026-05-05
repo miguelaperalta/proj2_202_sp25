@@ -40,12 +40,13 @@ def parse_row(fields: list[str]) -> Row:
         total_co2_emissions_excluding_lucf_per_capita = to_float(fields[7]),
     )
 
-def build(rows: list[list[str]]) -> Optional[Node]:
+def build_iter(reader) -> Optional[Node]:
         
-    if not rows:
+    try:
+        row = next(reader)
+        return Node(parse_row(row), build_iter(reader))
+    except StopIteration:
         return None
-
-    return Node(parse_row(rows[0]), build(rows[1:]))
 
 def read_csv_lines(filename: str) -> Optional[Node]:
     
@@ -67,9 +68,7 @@ def read_csv_lines(filename: str) -> Optional[Node]:
         if header != expected_header:
             raise ValueError("Invalid CSV header")
 
-        rows = list(reader)
-    
-    return build(rows)
+        return build_iter(reader)
 
 def listlen(data: Optional[Node]) -> int:
     
@@ -87,31 +86,39 @@ def filter_rows(
     if data is None:
         return None
     
-    current_value = getattr(data.value, field_name)
+    rest = filter_rows(data.next, field_name, comparison, value)
+
+    current_value = data.value.__dict__[field_name]
 
     def matches() -> bool:
         if current_value is None:
             return False
         
         if field_name == "country":
-            return comparison == "equal" and current_value == value
+            return comparison == "equal" and str(current_value) == str(value)
         
-        if comparison == "equal":
-            return current_value == value
+        try:
+
+            cv = float(current_value)
+            v = float(value)
+
+        except:
+
+            return False
         
-        elif comparison == "less_than":
-            return current_value < value
-            
+        if comparison == "less_than":
+            return cv < v
+        
         elif comparison == "greater_than":
-            return current_value > value
-        
+            return cv > v
+
+        elif comparison == "equal":
+            return cv == v
+
         else:
             raise ValueError("Invalid comparison")
-    
-    rest = filter_rows(data.next, field_name, comparison, value)
 
     if matches():
         return Node(data.value, rest)
-    
     else:
         return rest
