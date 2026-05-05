@@ -1,13 +1,117 @@
+from __future__ import annotations
+import sys
 import csv
-import math
 from dataclasses import dataclass
 from typing import *
 
+sys.setrecursionlimit(10_000)
 
 # Put your data definitions first!
+@dataclass(frozen=True)
+class Row:
+    country: str
+    year: int
+    electricity_and_heat_co2_emissions: Optional[float]
+    electricity_and_heat_co2_emissions_per_capita: Optional[float]
+    energy_co2_emissions: Optional[float]
+    energy_co2_emissions_per_capita: Optional[float]
+    total_co2_emissions_excluding_lucf: Optional[float]
+    total_co2_emissions_excluding_lucf_per_capita: Optional[float]
 
-# ...
+@dataclass(frozen=True)
+class Node:
+    value: Row
+    next: Optional[Node]
 
 # Then your functions.
+def parse_row(fields: list[str]) -> Row:
 
-# ...
+    def to_float(x: str) -> Optional[float]:
+            return float(x) if x != "" else None
+
+    return Row(
+        country = fields[0],
+        year = int(fields[1]),
+        electricity_and_heat_co2_emissions = to_float(fields[2]),
+        electricity_and_heat_co2_emissions_per_capita = to_float(fields[3]),
+        energy_co2_emissions = to_float(fields[4]),
+        energy_co2_emissions_per_capita = to_float(fields[5]),
+        total_co2_emissions_excluding_lucf = to_float(fields[6]),
+        total_co2_emissions_excluding_lucf_per_capita = to_float(fields[7]),
+    )
+
+def build(rows: list[list[str]]) -> Optional[Node]:
+        
+    if not rows:
+        return None
+
+    return Node(parse_row(rows[0]), build(rows[1:]))
+
+def read_csv_lines(filename: str) -> Optional[Node]:
+    
+    expected_header = [
+        "country",
+        "year",
+        "electricity_and_heat_co2_emissions",
+        "electricity_and_heat_co2_emissions_per_capita",
+        "energy_co2_emissions",
+        "energy_co2_emissions_per_capita",
+        "total_co2_emissions_excluding_lucf",
+        "total_co2_emissions_excluding_lucf_per_capita",
+    ]
+
+    with open(filename, newline = "") as csvfile:
+        reader = csv.reader(csvfile)
+        header = next(reader)
+
+        if header != expected_header:
+            raise ValueError("Invalid CSV header")
+
+        rows = list(reader)
+    
+    return build(rows)
+
+def listlen(data: Optional[Node]) -> int:
+    
+    if data is None:
+        return 0
+    return 1 + listlen(data.next)
+
+def filter_rows(
+    data: Optional[Node],
+    field_name: str,
+    comparison: str,
+    value: Union[str, float, int]
+) -> Optional[Node]:
+
+    if data is None:
+        return None
+    
+    current_value = getattr(data.value, field_name)
+
+    def matches() -> bool:
+        if current_value is None:
+            return False
+        
+        if field_name == "country":
+            return comparison == "equal" and current_value == value
+        
+        if comparison == "equal":
+            return current_value == value
+        
+        elif comparison == "less_than":
+            return current_value < value
+            
+        elif comparison == "greater_than":
+            return current_value > value
+        
+        else:
+            raise ValueError("Invalid comparison")
+    
+    rest = filter_rows(data.next, field_name, comparison, value)
+
+    if matches():
+        return Node(data.value, rest)
+    
+    else:
+        return rest

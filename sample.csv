@@ -1,0 +1,7 @@
+country,year,electricity_and_heat_co2_emissions,electricity_and_heat_co2_emissions_per_capita,energy_co2_emissions,energy_co2_emissions_per_capita,total_co2_emissions_excluding_lucf,total_co2_emissions_excluding_lucf_per_capita
+USA,2000,10.0,1.0,20.0,2.0,30.0,3.0
+USA,2001,11.0,1.1,21.0,2.1,31.0,3.1
+Canada,2000,5.0,0.5,15.0,1.5,25.0,2.5
+Mexico,2000,7.0,0.7,17.0,1.7,27.0,1.7
+Cape Verde,1990,0.03,0.08,0.18,0.49,0.18,0.49
+Central African Republic,2013,,,,,,
